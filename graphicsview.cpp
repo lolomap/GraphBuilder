@@ -34,15 +34,9 @@ void GraphicsView::slotAlarmTimer()
     this->deleteItemsFromGroup(group);
 
     int height = this->height(), width = this->width();
-    //scene->setSceneRect(0, 0, height, width);
+    scene->setSceneRect(0, 0, height, width);
 
     QPen pen(Qt::black);
-
-    /*
-     * ЗДЕСЬ РИСУЕМ
-     */
-    //group->addToGroup(scene->addEllipse(X_MIN, Y_MIN, 5, 5, pen, QBrush(Qt::black)));
-    //group->addToGroup(scene->addEllipse(X_MAX, Y_MAX, 5, 5, pen, QBrush(Qt::black)));
 
     QList<QGraphicsTextItem*> points;
     for(int i = 0; i < table->size(); i++)
