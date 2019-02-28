@@ -16,6 +16,8 @@ MainWindow::MainWindow(QWidget *parent) :
     hideEditingGraph();
     ui->pointX_input->setText("0");
     ui->pointY_input->setText("0");
+
+    connect(this, &MainWindow::converting_ready, this, &MainWindow::build_converted);
 }
 
 MainWindow::~MainWindow()
@@ -26,111 +28,7 @@ MainWindow::~MainWindow()
 void MainWindow::on_open_button_clicked()
 {
     QString fileName = QFileDialog::getOpenFileName(this, "Open file", QDir::currentPath(), "Table (*.txt *.xlsx)");
-
-    QString fileType = fileName.split('.').last();
-    if(fileType == "txt")
-    {
-        QFile tableFile(fileName);
-        if(tableFile.open(QIODevice::ReadOnly))
-        {
-            try {
-                QString data = tableFile.readAll();
-                QStringList lines = data.split("\r\n");
-                QStringList head = lines[0].split('\t');
-                for(int i = 1; i < lines.size(); i++)
-                {
-                    QStringList line = lines[i].split('\t');
-                    for(int j = 1; j < line.size(); j++)
-                    {
-                        table[line[0]][head[j]] = line[j];
-                    }
-                }
-
-            } catch (QException ex) {
-            #ifdef DEBUG
-                qDebug() << ex.what();
-            #endif
-              QMessageBox::warning(this, "Error", "Fail opening file");
-            }
-        }
-        else QMessageBox::warning(this, "Error", "Fail opening file");
-        if(tableFile.isOpen()) tableFile.close();
-    }
-    else if(fileType == "xlsx")
-    {
-        // получаем указатель на Excel
-        QAxObject *mExcel = new QAxObject("Excel.Application",this);
-        // на книги
-        QAxObject *workbooks = mExcel->querySubObject("Workbooks");
-        // на директорию, откуда грузить книг
-        QAxObject *workbook = workbooks->querySubObject( "Open(const QString&)", fileName );
-        // на листы
-        QAxObject *mSheets = workbook->querySubObject( "Sheets" );
-        // указываем, какой лист выбрать
-        QAxObject *StatSheet = mSheets->querySubObject( "Item(const QVariant&)", QVariant("mainSheet") );
-
-
-
-        // получение указателя на ячейку [строка][столбец] ((!)нумерация с единицы)
-        //QAxObject* cell = StatSheet->querySubObject("Cells(QVariant,QVariant)", 1, 1);
-
-        QStringList head;
-        QAxObject* cell = nullptr;
-        int i = 2;
-        do
-        {
-            cell = StatSheet->querySubObject("Cells(QVariant,QVariant)", 1, i);
-            head.push_back(cell->property("Value").toString());
-            i++;
-        }while(!cell->property("Value").toString().isEmpty());
-
-        i = 2;
-        do
-        {
-            cell = StatSheet->querySubObject("Cells(Qvariant,Qvariant)", i, 1);
-            QString lineName = cell->property("Value").toString();
-
-            for (int j = 2; j < head.size(); j++) {
-                cell = StatSheet->querySubObject("Cells(QVariant,Qvariant)", i, j);
-                table[lineName][head[j-2]] = cell->property("Value").toString();
-            }
-            cell = StatSheet->querySubObject("Cells(Qvariant,Qvariant)", i, 1);
-            i++;
-        }while(!cell->property("Value").toString().isEmpty());
-
-        // вставка значения переменной data (любой тип, приводимый к QVariant) в полученную ячейку
-        //cell->setProperty("Value", QVariant("Some value"));
-
-
-
-        // освобождение памяти
-        delete cell;
-        delete StatSheet;
-        delete mSheets;
-        workbook->dynamicCall("Save()");
-        workbook->dynamicCall("Close()");
-        delete workbook;
-        //закрываем книги
-        delete workbooks;
-        //закрываем Excel
-        mExcel->dynamicCall("Quit()");
-        delete mExcel;
-    }
-    else QMessageBox::warning(this, "Error", "Fail opening file");
-
-
-    newGraph = new GraphicsView(&table);
-    if(graphAgain)
-    {
-        QWidget* widget = ui->gridLayout->itemAtPosition(0,0)->widget();
-        ui->gridLayout->removeWidget(widget);
-        delete widget;
-    }
-    ui->gridLayout->addWidget(newGraph, 0, 0);
-    graphAgain = true;
-
-    ui->pushButton->setEnabled(true);
-    showEditingGraph();
+    QtConcurrent::run(this, &MainWindow::converting, fileName);
 }
 
 void MainWindow::on_pushButton_clicked()
@@ -313,6 +211,104 @@ void MainWindow::hideEditingGraph()
     ui->addLine_button->hide();
 }
 
+void MainWindow::converting(QString fileName)
+{
+    QString fileType = fileName.split('.').last();
+    if(fileType == "txt")
+    {
+        QFile tableFile(fileName);
+        if(tableFile.open(QIODevice::ReadOnly))
+        {
+            try {
+                QString data = tableFile.readAll();
+                QStringList lines = data.split("\r\n");
+                QStringList head = lines[0].split('\t');
+                for(int i = 1; i < lines.size(); i++)
+                {
+                    QStringList line = lines[i].split('\t');
+                    for(int j = 1; j < line.size(); j++)
+                    {
+                        table[line[0]][head[j]] = line[j];
+                    }
+                }
+
+            } catch (QException ex) {
+            #ifdef DEBUG
+                qDebug() << ex.what();
+            #endif
+              QMessageBox::warning(this, "Error", "Fail opening file");
+            }
+        }
+        else QMessageBox::warning(this, "Error", "Fail opening file");
+        if(tableFile.isOpen()) tableFile.close();
+
+    }
+    else if(fileType == "xlsx")
+    {
+        // получаем указатель на Excel
+        QAxObject *mExcel = new QAxObject("Excel.Application",this);
+        // на книги
+        QAxObject *workbooks = mExcel->querySubObject("Workbooks");
+        // на директорию, откуда грузить книг
+        QAxObject *workbook = workbooks->querySubObject( "Open(const QString&)", fileName );
+        // на листы
+        QAxObject *mSheets = workbook->querySubObject( "Sheets" );
+        // указываем, какой лист выбрать
+        QAxObject *StatSheet = mSheets->querySubObject( "Item(const QVariant&)", QVariant("mainSheet") );
+
+
+
+        // получение указателя на ячейку [строка][столбец] ((!)нумерация с единицы)
+        //QAxObject* cell = StatSheet->querySubObject("Cells(QVariant,QVariant)", 1, 1);
+
+        QStringList head;
+        QAxObject* cell = nullptr;
+        int i = 2;
+        do
+        {
+            cell = StatSheet->querySubObject("Cells(QVariant,QVariant)", 1, i);
+            head.push_back(cell->property("Value").toString());
+            i++;
+        }while(!cell->property("Value").toString().isEmpty());
+
+        i = 2;
+        do
+        {
+            cell = StatSheet->querySubObject("Cells(Qvariant,Qvariant)", i, 1);
+            QString lineName = cell->property("Value").toString();
+
+            for (int j = 2; j < head.size(); j++) {
+                cell = StatSheet->querySubObject("Cells(QVariant,Qvariant)", i, j);
+                table[lineName][head[j-2]] = cell->property("Value").toString();
+            }
+            cell = StatSheet->querySubObject("Cells(Qvariant,Qvariant)", i, 1);
+            i++;
+        }while(!cell->property("Value").toString().isEmpty());
+
+        // вставка значения переменной data (любой тип, приводимый к QVariant) в полученную ячейку
+        //cell->setProperty("Value", QVariant("Some value"));
+
+
+
+        // освобождение памяти
+        delete cell;
+        delete StatSheet;
+        delete mSheets;
+        workbook->dynamicCall("Save()");
+        workbook->dynamicCall("Close()");
+        delete workbook;
+        //закрываем книги
+        delete workbooks;
+        //закрываем Excel
+        mExcel->dynamicCall("Quit()");
+        delete mExcel;
+    }
+    else QMessageBox::warning(this, "Error", "Fail opening file");
+
+
+    emit converting_ready();
+}
+
 void MainWindow::on_deletePoint_button_clicked()
 {
     QString pointName = ui->pointNameDelete_input->text();
@@ -354,4 +350,20 @@ void MainWindow::on_addLine_button_clicked()
 
     newGraph->addLine(x1, y1, x2, y2);
     newGraph->addWeight((x1+x2)/2, (y1+y2)/2, weight);
+}
+
+void MainWindow::build_converted()
+{
+    newGraph = new GraphicsView(&table);
+    if(graphAgain)
+    {
+        QWidget* widget = ui->gridLayout->itemAtPosition(0,0)->widget();
+        ui->gridLayout->removeWidget(widget);
+        delete widget;
+    }
+    ui->gridLayout->addWidget(newGraph, 0, 0);
+    graphAgain = true;
+
+    ui->pushButton->setEnabled(true);
+    showEditingGraph();
 }

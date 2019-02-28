@@ -9,6 +9,8 @@
 #include <QDebug>
 #include <QMessageBox>
 #include <ActiveQt/qaxobject.h>
+#include <QThread>
+#include <QtConcurrent/QtConcurrent>
 
 #include "graphicsview.h"
 
@@ -41,6 +43,12 @@ private slots:
 
     void on_addLine_button_clicked();
 
+signals:
+    void converting_ready();
+
+public slots:
+    void build_converted();
+
 private:
     Ui::MainWindow *ui;
     QMap<QString, QMap<QString, QString>> table;
@@ -49,6 +57,7 @@ private:
 
     void showEditingGraph();
     void hideEditingGraph();
+    void converting(QString fileName);
 };
 
 #endif // MAINWINDOW_H
