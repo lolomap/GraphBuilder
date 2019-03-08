@@ -8,6 +8,8 @@
 #include <QWidget>
 #include <QMap>
 #include <QGraphicsSceneMouseEvent>
+#include <QMouseEvent>
+#include <QLineEdit>
 
 #define X_MIN 0
 #define X_MAX width - 10
@@ -18,8 +20,8 @@ class GraphicsView : public QGraphicsView
 {
     Q_OBJECT
 public:
-    explicit GraphicsView(QMap<QString, QMap<QString, QString> > *table, QWidget *parent = nullptr);
-    explicit GraphicsView(QWidget *parent = nullptr);
+    explicit GraphicsView(QMap<QString, QMap<QString, QString> > *table, int &mode, QWidget *parent = nullptr);
+    explicit GraphicsView(int &mode, QWidget *parent = nullptr);
     ~GraphicsView();
 
     QList<QGraphicsTextItem*> points;
@@ -42,9 +44,16 @@ private:
     QGraphicsScene* scene;
     QGraphicsItemGroup* group;
 
+    int* mode;
+
     void deleteItemsFromGroup(QGraphicsItemGroup *group);
 
+    void mouseReleaseEvent(QMouseEvent *event);
+
     QMap<QString, QMap<QString, QString>>* table = nullptr;
+
+    bool secondClick = false;
+    QPoint saveClick;
 };
 
 #endif // GRAPHICSVIEW_H

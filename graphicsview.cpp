@@ -1,10 +1,10 @@
 #include "graphicsview.h"
 
-GraphicsView::GraphicsView(QMap<QString, QMap<QString, QString>>* table, QWidget *parent)
+GraphicsView::GraphicsView(QMap<QString, QMap<QString, QString>>* table, int &mode, QWidget *parent)
     : QGraphicsView(parent)
 {
     this->table = table;
-
+    this->mode = &mode;
     this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     this->setAlignment(Qt::AlignCenter);
@@ -21,8 +21,9 @@ GraphicsView::GraphicsView(QMap<QString, QMap<QString, QString>>* table, QWidget
     buildGraphByTable();
 }
 
-GraphicsView::GraphicsView(QWidget *parent) : QGraphicsView(parent)
+GraphicsView::GraphicsView(int &mode, QWidget *parent) : QGraphicsView(parent)
 {
+    this->mode = &mode;
     this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     this->setAlignment(Qt::AlignCenter);
@@ -205,6 +206,27 @@ void GraphicsView::deleteItemsFromGroup(QGraphicsItemGroup *group)
        if(item->group() == group ) {
           delete item;
        }
+    }
+}
+
+void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
+{
+    switch (*mode) {
+    case 0:
+        addPoint(event->x(), event->y(), "New point");
+        break;
+    case 1:
+        if(!secondClick)
+        {
+            saveClick = event->pos();
+            secondClick = true;
+        }
+        else
+        {
+            addLine(event->x(), event->y(), saveClick.x(), saveClick.y());
+            secondClick = false;
+        }
+        break;
     }
 }
 

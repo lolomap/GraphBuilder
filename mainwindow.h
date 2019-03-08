@@ -43,6 +43,12 @@ private slots:
 
     void on_addLine_button_clicked();
 
+    void on_autoSetPoint_clicked();
+
+    void on_autoSetLine_clicked();
+
+    void on_renamePoint_button_clicked();
+
 signals:
     void converting_ready();
 
@@ -50,6 +56,12 @@ public slots:
     void build_converted();
 
 private:
+    enum paintMode
+    {
+      Point,
+      Line
+    };
+
     Ui::MainWindow *ui;
     QMap<QString, QMap<QString, QString>> table;
     GraphicsView* newGraph;
@@ -58,6 +70,8 @@ private:
     void showEditingGraph();
     void hideEditingGraph();
     void converting(QString fileName);
+
+    int mode;
 };
 
 #endif // MAINWINDOW_H

@@ -1,8 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#define DEBUG
-
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -112,7 +110,7 @@ void MainWindow::on_openGraph_button_clicked()
             lines.push_back(dataSplited[i]);
         }
 
-        newGraph = new GraphicsView();
+        newGraph = new GraphicsView(mode);
         newGraph->buildGraphByFile(points, weights, lines);
         if(graphAgain)
         {
@@ -140,7 +138,7 @@ void MainWindow::on_create_button_clicked()
         delete widget;
     }
 
-    newGraph = new GraphicsView();
+    newGraph = new GraphicsView(mode);
     ui->gridLayout->addWidget(newGraph, 0, 0);
 
 
@@ -187,6 +185,14 @@ void MainWindow::showEditingGraph()
     ui->weight_input->show();
     ui->line_3->show();
     ui->addLine_button->show();
+    ui->line_4->show();
+    ui->label_8->show();
+    ui->label_9->show();
+    ui->renameNew_input->show();
+    ui->renamePoint_button->show();
+    ui->renamePoint_input->show();
+    ui->autoSetLine->show();
+    ui->autoSetPoint->show();
 }
 
 void MainWindow::hideEditingGraph()
@@ -209,6 +215,14 @@ void MainWindow::hideEditingGraph()
     ui->weight_input->hide();
     ui->line_3->hide();
     ui->addLine_button->hide();
+    ui->line_4->hide();
+    ui->label_8->hide();
+    ui->label_9->hide();
+    ui->renameNew_input->hide();
+    ui->renamePoint_input->hide();
+    ui->renamePoint_button->hide();
+    ui->autoSetLine->hide();
+    ui->autoSetPoint->hide();
 }
 
 void MainWindow::converting(QString fileName)
@@ -354,7 +368,7 @@ void MainWindow::on_addLine_button_clicked()
 
 void MainWindow::build_converted()
 {
-    newGraph = new GraphicsView(&table);
+    newGraph = new GraphicsView(&table, mode);
     if(graphAgain)
     {
         QWidget* widget = ui->gridLayout->itemAtPosition(0,0)->widget();
@@ -366,4 +380,27 @@ void MainWindow::build_converted()
 
     ui->pushButton->setEnabled(true);
     showEditingGraph();
+}
+
+void MainWindow::on_autoSetPoint_clicked()
+{
+    mode = Point;
+}
+
+void MainWindow::on_autoSetLine_clicked()
+{
+    mode = Line;
+}
+
+
+
+void MainWindow::on_renamePoint_button_clicked()
+{
+    QString pointName = ui->renamePoint_input->text();
+    QString newName = ui->renameNew_input->text();
+    foreach(auto point, newGraph->points)
+    {
+        if(point->toPlainText() == pointName)
+            point->setPlainText(newName);
+    }
 }
