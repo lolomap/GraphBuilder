@@ -10,7 +10,7 @@ GraphicsView::GraphicsView(QMap<QString, QMap<QString, QString>>* table, int &mo
     this->setAlignment(Qt::AlignCenter);
     this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    this->setMinimumSize(100, 100);
+    this->setSceneRect(0,0,500,500);
 
     scene = new QGraphicsScene;
     this->setScene(scene);
@@ -29,7 +29,7 @@ GraphicsView::GraphicsView(int &mode, QWidget *parent) : QGraphicsView(parent)
     this->setAlignment(Qt::AlignCenter);
     this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    this->setMinimumSize(100, 100);
+    this->setSceneRect(0,0,500,500);
 
     scene = new QGraphicsScene;
     this->setScene(scene);
